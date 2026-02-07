@@ -18,8 +18,11 @@ RUN npm run build
 # =====================
 FROM nginx:alpine
 
+# Create a non-root user
+RUN addgroup -S nginx && adduser -S nginx -G nginx
+
 # Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Copy build artifacts
 COPY --from=build /app/build /usr/share/nginx/html
@@ -28,11 +31,13 @@ COPY --from=build /app/build /usr/share/nginx/html
 RUN chmod -R g+rwX /usr/share/nginx/html \
     && chmod -R g+rwX /var/cache/nginx \
     && chmod -R g+rwX /var/log/nginx \
-    && chmod -R g+rwX /etc/nginx/conf.d \
-    && mkdir -p /tmp /var/run/nginx \
-    && chmod -R g+rwX /tmp /var/run/nginx
+    && chmod -R g+rwX /tmp /var/run/nginx \
+    && chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /tmp /var/run/nginx
 
-# Expose port
+# Switch to non-root user
+USER nginx
+
+# Expose port 8080
 EXPOSE 8080
 
 # Healthcheck
